@@ -7,6 +7,9 @@ export default function Reciever(){
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const [localStream  , setLocalStream] = useState<any>(null)
   const [remoteStream , setRemoteStream] = useState<any>(null)
+  const [connectionStatus, setConnectionStatus] = useState({ senderConnected: false, receiverConnected: false });
+
+
 
   // Gettting the local stream
 
@@ -14,7 +17,8 @@ export default function Reciever(){
   useEffect(()=>{
   
     let pc : RTCPeerConnection | null = null
-    const socket = new WebSocket('wss://rtc-core.onrender.com')
+    //const socket = new WebSocket('wss://rtc-core.onrender.com')
+    const socket = new WebSocket('ws://localhost:8080');
     
     socket.onopen = () => {
         socket.send(JSON.stringify({type:'reciever'}))
@@ -23,13 +27,23 @@ export default function Reciever(){
     socket.onmessage = async (event) => {
       
       const message = JSON.parse(event.data)
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setLocalStream(stream);
+      
+
+      if (message.type === "connectionStatus") {
+        setConnectionStatus({
+          senderConnected: message.senderConnected,
+          receiverConnected: message.receiverConnected,
+        });
+        return;
+      }
       
       if(message.type == 'createOffer'){
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        setLocalStream(stream);
 
         pc = new RTCPeerConnection({
           iceServers: [
@@ -126,32 +140,22 @@ export default function Reciever(){
 
          <div style={{width:"100vh" , height:'100wv'}}>
 
-            Remote Video
-           <Video remoteVideoRef={remoteVideoRef} stream={remoteStream} audioPlay={audioPlay} /> 
+         <p>{connectionStatus.senderConnected ? "Sender Connected" : "Sender Not Connected"}</p>
+         <p>{connectionStatus.receiverConnected ? "Receiver Connected" : "Receiver Not Connected"}</p>
+     
 
+           Local Video
+           <video autoPlay ref={localVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
 
-            {
-              localStream ? 
-              <div>
-                <video autoPlay ref={localVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
-              </div>
-              : <>Nothing to load</>
-            }
+           Remote Video   
+           <video autoPlay ref={remoteVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
+           <button onClick={audioPlay}>Connect the audio </button>
+    
+            
+  
     
          </div>
         </>
     )
 }
 
-function Video({stream , remoteVideoRef , audioPlay }:any){
-
-  return<>{
-    stream ? 
-    <div>
-     <video autoPlay ref={remoteVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
-     <button onClick={audioPlay}>Connect the audio </button>
-    </div>
-      : <>Nothing to load</>} 
-    
-    </>
-}

@@ -7,13 +7,32 @@ export default function Sender(){
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null)
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const localVideoRef = useRef<HTMLVideoElement>(null);
+    const [connectionStatus, setConnectionStatus] = useState({ senderConnected: false, receiverConnected: false });
+    const [isCallStarted, setIsCallStarted] = useState(false);
+
     
 
     useEffect(()=>{
-        const socket = new WebSocket('wss://rtc-core.onrender.com')
+        //const socket = new WebSocket('wss://rtc-core.onrender.com')
+        const socket = new WebSocket('ws://localhost:8080');
     
         socket.onopen = () => {
             socket.send(JSON.stringify({type:'sender'}))
+        }
+
+        socket.onmessage = async (event) => {
+
+          const message = JSON.parse(event.data)
+
+          if (message.type === "connectionStatus") {
+            setConnectionStatus({
+              senderConnected: message.senderConnected,
+              receiverConnected: message.receiverConnected,
+            });
+            return;
+          }
+
+
         }
 
        setSocket(socket);     
@@ -24,6 +43,7 @@ export default function Sender(){
 
         const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
         setStream(stream)
+        setIsCallStarted(true)
 
         if(!socket){
             return
@@ -96,7 +116,6 @@ export default function Sender(){
             else if(message.type === 'iceCandidate'){
                 await pc.addIceCandidate(message.candidate)
             }
-
         }
 
     }
@@ -112,16 +131,35 @@ export default function Sender(){
         }
     },[stream])
 
+    function audioPlay(){
+      //@ts-ignore
+      remoteVideoRef.current.muted = false
+    }
+
 
     return(
         <>
-         <button onClick={startSendingVideo}>Start the call</button>
 
-         Local Video 
-         <video autoPlay ref={localVideoRef} muted style={{width:"300px" , height:'300px'}}/>
-
-         Remote Video 
-         <video autoPlay ref={remoteVideoRef} muted style={{width:"300px" , height:'300px'}}/>
+         {
+            connectionStatus.senderConnected && connectionStatus.receiverConnected ?
+                isCallStarted ? 
+                <>
+                  Local Video 
+                  <video autoPlay ref={localVideoRef} muted style={{width:"300px" , height:'300px'}}/>
+                  Remote Video 
+                  <video autoPlay ref={remoteVideoRef} muted style={{width:"300px" , height:'300px'}}/>
+                  <button onClick={audioPlay}>Connect the audio </button>
+    
+                 </>
+                :
+                <button onClick={startSendingVideo}>Start the call</button> 
+            :
+            <>
+             <p>{connectionStatus.senderConnected ? "Sender Connected" : "Sender Not Connected"}</p>
+             <p>{connectionStatus.receiverConnected ? "Receiver Connected" : "Receiver Not Connected"}</p>
+            </>
+         }
+         
         </>
     )
 }
