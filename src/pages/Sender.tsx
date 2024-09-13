@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import CallPage from "./CallPage";
 
 export default function Sender(){
 
@@ -13,8 +14,8 @@ export default function Sender(){
     
 
     useEffect(()=>{
-        const socket = new WebSocket('wss://rtc-core.onrender.com')
-        //const socket = new WebSocket('ws://localhost:8080');
+        //const socket = new WebSocket('wss://rtc-core.onrender.com')
+        const socket = new WebSocket('ws://localhost:8080');
     
         socket.onopen = () => {
             socket.send(JSON.stringify({type:'sender'}))
@@ -135,6 +136,10 @@ export default function Sender(){
       //@ts-ignore
       remoteVideoRef.current.muted = false
     }
+    function audioPause(){ 
+      //@ts-ignore
+      remoteVideoRef.current.muted = false
+    }
 
 
     return(
@@ -144,12 +149,10 @@ export default function Sender(){
             connectionStatus.senderConnected && connectionStatus.receiverConnected ?
                 isCallStarted ? 
                 <>
-                  Local Video 
-                  <video autoPlay ref={localVideoRef} muted style={{width:"300px" , height:'300px'}}/>
-                  Remote Video 
-                  <video autoPlay ref={remoteVideoRef} muted style={{width:"300px" , height:'300px'}}/>
-                  <button onClick={audioPlay}>Connect the audio </button>
-    
+
+                <CallPage localVideoRef={localVideoRef} remoteVideoRef={remoteVideoRef} audioPlay={audioPlay} audioPause={audioPause}/>
+              
+      
                  </>
                 :
                 <button onClick={startSendingVideo}>Start the call</button> 

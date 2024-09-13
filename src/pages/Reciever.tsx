@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState} from "react"
+import CallPage from "./CallPage";
 
 
 export default function Reciever(){
@@ -17,8 +18,8 @@ export default function Reciever(){
   useEffect(()=>{
   
     let pc : RTCPeerConnection | null = null
-    const socket = new WebSocket('wss://rtc-core.onrender.com')
-    //const socket = new WebSocket('ws://localhost:8080');
+    //const socket = new WebSocket('wss://rtc-core.onrender.com')
+    const socket = new WebSocket('ws://localhost:8080');
     
     socket.onopen = () => {
         socket.send(JSON.stringify({type:'reciever'}))
@@ -144,13 +145,7 @@ export default function Reciever(){
          <p>{connectionStatus.receiverConnected ? "Receiver Connected" : "Receiver Not Connected"}</p>
      
 
-           Local Video
-           <video autoPlay ref={localVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
-
-           Remote Video   
-           <video autoPlay ref={remoteVideoRef} muted style={{width:"400px" , height:'400px'}}/> 
-           <button onClick={audioPlay}>Connect the audio </button>
-    
+         <CallPage localVideoRef={localVideoRef} remoteVideoRef={remoteVideoRef} audioPlay={audioPlay}/>
             
   
     
